@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador ETI v6.1 FNDE/PAR - Governança e Rastreabilidade</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --navy:#0b3561; --navy2:#1a5fa0; --navy3:#e8f1fb; --green:#1d6b38; --green2:#e9f6ee;
+  --red:#8b1a1a; --red2:#fde8e8; --amber:#8a5200; --amber2:#fff3d8; --teal:#0b6b63; --teal2:#e0f4f0;
+  --purple:#4b2ca0; --purple2:#eeeafb; --bg:#eeecea; --card:#fff; --surface:#f7f6f2; --txt:#1f1f23;
+  --muted:#5d5d64; --soft:#8b8b94; --border:rgba(0,0,0,.12); --shadow:0 2px 10px rgba(0,0,0,.07);
+  --rad:12px; --mono:'SFMono-Regular','Consolas','Liberation Mono',monospace; --sans:'Segoe UI',system-ui,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--txt);font-size:13.5px;line-height:1.45}
+.header{position:sticky;top:0;z-index:20;background:var(--navy);color:white;box-shadow:0 4px 18px rgba(0,0,0,.22)}
+.header-top{display:flex;gap:16px;align-items:stretch;flex-wrap:wrap}
+.title{padding:13px 20px;min-width:260px;border-right:1px solid rgba(255,255,255,.16)}
+.title h1{font-size:15px;margin:0;font-weight:800}
+.title p{font-size:11px;margin:3px 0 0;color:rgba(255,255,255,.65)}
+.kpis{display:flex;flex:1;flex-wrap:wrap}
+.kpi{padding:9px 14px;min-width:160px;flex:1;border-right:1px solid rgba(255,255,255,.14)}
+.kpi-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.58);font-weight:800}
+.kpi-value{font-family:var(--mono);font-size:19px;font-weight:900;margin-top:2px}
+.kpi-sub{font-size:10px;color:rgba(255,255,255,.48)}
+.tabs{display:flex;gap:3px;overflow-x:auto;background:#e5e2dc;border-bottom:1px solid var(--border);padding:0 18px}
+.tab{border:0;background:transparent;color:var(--muted);font-weight:800;font-size:12px;padding:11px 16px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.tab.active{color:var(--navy);background:rgba(255,255,255,.58);border-bottom-color:var(--navy)}
+.page{display:none;padding:18px 20px 32px}
+.page.active{display:block}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:18px;align-items:start}
+@media(max-width:1120px){.grid{grid-template-columns:1fr} .sticky{position:static!important}}
+.sticky{position:sticky;top:96px}
+.card,.block{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+.card-hd,.block-hd{background:var(--surface);border-bottom:1px solid var(--border);padding:11px 14px;font-weight:900;color:var(--navy);display:flex;align-items:center;gap:10px}
+.num-badge{width:28px;height:28px;border-radius:999px;background:var(--navy);color:white;display:flex;align-items:center;justify-content:center;font-weight:900;flex:0 0 auto}
+.card-body,.block-body{padding:14px}
+.info{background:var(--navy3);border:1px solid #bdd2ef;color:var(--navy);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px}
+.warn{display:none;background:var(--amber2);border:1px solid #f0c16b;color:var(--amber);border-radius:8px;padding:8px 10px;font-size:12px;margin:8px 0}
+.warn.on{display:block}
+.err{background:var(--red2);border-color:#efaaaa;color:var(--red)}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.controls3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.controls4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media(max-width:760px){.controls,.controls3,.controls4{grid-template-columns:1fr}}
+label,.lbl{font-size:11px;font-weight:800;color:var(--muted);display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}
+input,select{width:100%;border:1px solid rgba(0,0,0,.22);border-radius:7px;background:white;padding:6px 8px;font-family:var(--mono);font-size:12px;color:var(--txt)}
+select{font-family:var(--sans)}
+input[type=range]{padding:0;accent-color:var(--navy)}
+input:focus,select:focus{outline:2px solid var(--navy2);outline-offset:1px}
+.btn{border:0;background:var(--navy);color:white;border-radius:8px;padding:8px 13px;font-weight:800;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:hover{opacity:.88}
+.btn.secondary{background:white;color:var(--navy);border:1.5px solid var(--navy)}
+.btn.green{background:var(--green)}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:9px;background:white}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th{background:#f0eee8;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;text-align:left;padding:8px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr:hover td{background:#faf9f6}
+td.num, th.num{text-align:right;font-family:var(--mono)}
+td.small{font-size:11px;color:var(--muted)}
+.result{border-radius:12px;padding:13px 14px;margin-bottom:12px;border:1.5px solid var(--border)}
+.result.navy{background:var(--navy3);border-color:#bdd2ef}
+.result.green{background:var(--green2);border-color:#a8d9b8}
+.result.purple{background:var(--purple2);border-color:#c6bdf0}
+.result.teal{background:var(--teal2);border-color:#8ccac3}
+.result.amber{background:var(--amber2);border-color:#f0c16b}
+.result .k{font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);font-weight:900}
+.result .v{font-family:var(--mono);font-size:26px;font-weight:900;margin:4px 0;color:var(--txt)}
+.result .s{font-size:11px;color:var(--muted)}
+.rows{border-top:1px solid rgba(0,0,0,.12);margin-top:8px;padding-top:6px}
+.rr{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.rr span:last-child{font-family:var(--mono);font-weight:800;text-align:right}
+.subnav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.subtab{border:1px solid var(--border);background:white;color:var(--muted);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;cursor:pointer}
+.subtab.active{background:var(--navy);color:white;border-color:var(--navy)}
+.subpage{display:none}
+.subpage.active{display:block}
+hr{border:0;border-top:1px solid var(--border);margin:14px 0}
+.tt { position:relative; cursor:help; border-bottom:1px dotted var(--navy); color:var(--navy); font-weight:bold; }
+.tt::after {
+  content:attr(data-tt); position:absolute; bottom:120%; left:50%; transform:translateX(-50%);
+  background:#1f1f23; color:#fff; padding:8px 12px; border-radius:6px; font-size:11px; white-space:normal;
+  width:240px; z-index:100; display:none; pointer-events:none; font-family:var(--sans); font-weight:normal; text-align:center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.tt:hover::after { display:block; }
+.big-gap { text-align: center; padding: 20px 0; }
+.big-gap .val { font-family: var(--mono); font-size: 42px; font-weight: 900; color: var(--navy); margin: 10px 0; }
+.guide-card { background: var(--surface); border-left: 4px solid var(--navy); padding: 12px 16px; margin-bottom: 16px; border-radius: 0 8px 8px 0; }
+.guide-card h4 { margin: 0 0 6px 0; color: var(--navy); }
+.guide-card p { margin: 0; font-size: 12px; color: var(--muted); }
+.regional-on { border-color: var(--amber); background: var(--amber2); }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-top">
+    <div class="title">
+      <h1>Simulador ETI v6.1 FNDE/PAR</h1>
+      <p>PNE, Expansão Guiada e Custeio (Exportável)</p>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-label">Obras e equipamentos (Acum. 2036)</div><div class="kpi-value" id="kpiCap36">R$ —</div><div class="kpi-sub">Capex Estimado</div></div>
+      <div class="kpi"><div class="kpi-label">Custeio anual na meta (2036)</div><div class="kpi-value" id="kpiOp36">R$ —</div><div class="kpi-sub">Opex Projetado</div></div>
+      <div class="kpi"><div class="kpi-label">Total acumulado 2026-2036</div><div class="kpi-value" id="kpiTot36">R$ —</div><div class="kpi-sub">Capex + Transição + Custeio</div></div>
+      <div class="kpi"><div class="kpi-label">Universalização 2050</div><div class="kpi-value" id="kpiTot50">R$ —</div><div class="kpi-sub">Acumulado Estratégico</div></div>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="sim">Simular expansão</button>
+    <button class="tab" data-tab="fin">Financiar</button>
+    <button class="tab" data-tab="cmp">Comparar cenários</button>
+    <button class="tab" data-tab="prem">Ajustar premissas</button>
+    <button class="tab" data-tab="met">Auditar metodologia</button>
+  </nav>
+</header>
+
+<section class="page active" id="sim">
+  <div class="grid">
+    <div>
+      <div class="guide-card">
+        <h4>Como usar este simulador</h4>
+        <p>Este simulador calcula a lacuna de matrículas em tempo integral para atingir a meta definida e distribui automaticamente essa lacuna entre etapas, estratégias de expansão e tamanhos de escola. O usuário pode aceitar a sugestão automática ou alterar qualquer premissa. O painel mostra sempre o percentual informado, o percentual usado no cálculo, as matrículas alocadas, o número estimado de unidades, o custo de capital, o custeio anual e o gap de financiamento.</p>
+      </div>
+
+      <!-- BLOCO 1 -->
+      <div class="block">
+        <div class="block-hd"><div class="num-badge">1</div>Lacuna da meta</div>
+        <div class="block-body">
+          <div class="controls3">
+            <div><label>UF ou Brasil</label><select id="ufSelect"></select></div>
+            <div><label><span class="tt" data-tt="Base projetada para o período, considerando a rede pública atual.">Base pública (mi)</span></label><input id="basePub" type="number" step="0.001" value="36.793"></div>
+            <div><label><span class="tt" data-tt="Matrículas que já se encontram em formato de tempo integral atualmente.">ETI atual (mi)</span></label><input id="baseEti" type="number" step="0.001" value="9.500"></div>
+            <div><label><span class="tt" data-tt="Meta percentual de matrículas em tempo integral para o ano de 2036.">Meta 2036</span> <span id="t36Lbl">50%</span></label><input id="t36" type="range" min="25" max="100" step="1" value="50"></div>
+            <div><label><span class="tt" data-tt="Meta percentual de matrículas em tempo integral para o ano de 2050 (Universalização).">Meta 2050</span> <span id="t50Lbl">100%</span></label><input id="t50" type="range" min="50" max="100" step="1" value="100"></div>
+            <div><label><span class="tt" data-tt="Projeção de queda da população em idade escolar até 2036.">Queda demográfica 2036</span> <span id="d36Lbl">13%</span></label><input id="d36" type="range" min="0" max="30" step="1" value="13"></div>
+          </div>
+          <div class="big-gap">
+            <div class="lbl" style="justify-content:center"><span class="tt" data-tt="Lacuna é a diferença entre as matrículas em tempo integral necessárias para alcançar a meta e as matrículas em tempo integral já existentes. É o volume de novas matrículas em jornada integral que precisa ser criado.">Lacuna a criar (2036)</span></div>
+            <div class="val" id="lblLacuna">X mi</div>
+            <div class="s">Matrículas ETI necessárias: <span id="lblNecessarias">X</span> mi</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCO 2 -->
+      <div class="block">
+        <div class="block-hd"><div class="num-badge">2</div>Divisão automática da lacuna por etapa</div>
+        <div class="block-body">
+          <div class="info"><span class="tt" data-tt="O painel distribui automaticamente a lacuna entre etapas com base em premissas técnicas iniciais. O usuário pode alterar qualquer percentual. O cálculo sempre mostra o percentual informado e o percentual efetivamente usado após normalização.">Divisão automática:</span> A sugestão abaixo distribui a lacuna. Ajuste manualmente se necessário.</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Etapa</th><th class="num"><span class="tt" data-tt="Percentual digitado pelo usuário. Se a soma não for 100%, será reescalado.">% informado</span></th><th class="num"><span class="tt" data-tt="É o percentual efetivamente utilizado no cálculo após eventual normalização. Quando a soma dos percentuais informados não fecha 100%, o painel reescala os valores para manter a consistência.">% usado</span></th><th class="num">Matrículas</th></tr></thead>
+              <tbody>
+                <tr><td>Educação Infantil</td><td><input id="div_ei" type="number" min="0" max="100" value="20" class="recalc-div"></td><td class="num" id="u_div_ei">—</td><td class="num" id="m_div_ei">—</td></tr>
+                <tr><td>Ensino Fundamental</td><td><input id="div_ef" type="number" min="0" max="100" value="45" class="recalc-div"></td><td class="num" id="u_div_ef">—</td><td class="num" id="m_div_ef">—</td></tr>
+                <tr><td>Ensino Médio Regular</td><td><input id="div_em" type="number" min="0" max="100" value="25" class="recalc-div"></td><td class="num" id="u_div_em">—</td><td class="num" id="m_div_em">—</td></tr>
+                <tr><td><span class="tt" data-tt="Educação profissional é tratada como categoria parametrizada porque seus custos dependem da oferta, dos laboratórios, equipamentos e eixos tecnológicos. O usuário pode alterar a capacidade e o custo unitário.">Educação Profissional (EPT)</span></td><td><input id="div_ept" type="number" min="0" max="100" value="10" class="recalc-div"></td><td class="num" id="u_div_ept">—</td><td class="num" id="m_div_ept">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="btn-row"><button class="btn secondary" id="btnNormDiv">Reescalar para 100%</button></div>
+        </div>
+      </div>
+
+      <!-- BLOCO 3 -->
+      <div class="block">
+        <div class="block-hd"><div class="num-badge">3</div>Estratégia de atendimento e Tipologias</div>
+        <div class="block-body">
+          <div class="info">Como a rede vai atender essa lacuna? Defina a estratégia macro e os tamanhos das unidades. <br><small><i>Nota: Ensino Médio utiliza por padrão as mesmas referências físicas do Ensino Fundamental.</i></small></div>
+          
+          <div class="table-wrap" style="margin-bottom:16px;">
+            <table>
+              <thead><tr><th>Estratégia</th><th class="num">% inf.</th><th class="num">% usado</th><th class="num">Matrículas</th><th class="num">Unidades Est.</th><th class="num">Custo Base</th></tr></thead>
+              <tbody>
+                <tr><td><span class="tt" data-tt="Conversão de estoque sem obra pesada, focada em adequações leves (Bloco A).">Conversão s/ obra pesada</span></td><td><input id="strat_conv" type="number" value="25" class="recalc-strat"></td><td class="num" id="u_strat_conv">—</td><td class="num" id="m_strat_conv">—</td><td class="num" id="un_strat_conv">—</td><td class="num" id="c_strat_conv">—</td></tr>
+                <tr><td><span class="tt" data-tt="Reforma e adequação do estoque com intervenções moderadas/pesadas (Bloco A ampliado).">Reforma / Adequação</span></td><td><input id="strat_ref" type="number" value="25" class="recalc-strat"></td><td class="num" id="u_strat_ref">—</td><td class="num" id="m_strat_ref">—</td><td class="num" id="un_strat_ref">—</td><td class="num" id="c_strat_ref">—</td></tr>
+                <tr><td><span class="tt" data-tt="Ampliação parametrizada de escolas existentes, adicionando salas e infraestrutura (Bloco B).">Ampliação</span></td><td><input id="strat_amp" type="number" value="25" class="recalc-strat"></td><td class="num" id="u_strat_amp">—</td><td class="num" id="m_strat_amp">—</td><td class="num" id="un_strat_amp">—</td><td class="num" id="c_strat_amp">—</td></tr>
+                <tr><td><span class="tt" data-tt="Construção de novas unidades (Bloco C), baseado nas tipologias FNDE/PAR ou modelos parametrizados.">Escolas Novas FNDE</span></td><td><input id="strat_new" type="number" value="25" class="recalc-strat"></td><td class="num" id="u_strat_new">—</td><td class="num" id="m_strat_new">—</td><td class="num" id="un_strat_new">—</td><td class="num" id="c_strat_new">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="btn-row"><button class="btn secondary" id="btnNormStrat">Reescalar Estratégias</button></div>
+          <hr>
+          <label><b>Distribuição das Escolas Novas (EF/EM) por <span class="tt" data-tt="Capacidade por unidade é o número de matrículas que uma escola consegue atender em jornada integral. Baseado nas tipologias padrão.">Tamanho FNDE</span></b></label>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tamanho / Padrão</th><th class="num">Capacidade</th><th class="num">Ref. Custo Unit.</th><th class="num">% inf.</th><th class="num">% usado</th><th class="num">Unidades Est.</th></tr></thead>
+              <tbody>
+                <tr><td><span class="tt" data-tt="Equivalente a escola de 2 salas. Uso comum em áreas rurais ou pequenas comunidades.">Escola Pequena</span></td><td><input id="cap_peq" type="number" value="60"></td><td class="num" id="c_unit_peq">—</td><td><input id="sz_peq" type="number" value="10" class="recalc-sz"></td><td class="num" id="u_sz_peq">—</td><td class="num" id="un_sz_peq">—</td></tr>
+                <tr><td><span class="tt" data-tt="Equivalente a escola de 5 salas. Municípios médios, periferias em expansão.">Escola Média</span></td><td><input id="cap_med" type="number" value="175"></td><td class="num" id="c_unit_med">—</td><td><input id="sz_med" type="number" value="50" class="recalc-sz"></td><td class="num" id="u_sz_med">—</td><td class="num" id="un_sz_med">—</td></tr>
+                <tr><td><span class="tt" data-tt="Equivalente a escola de 13 salas. Capitais e regiões metropolitanas densas.">Escola Grande</span></td><td><input id="cap_gra" type="number" value="455"></td><td class="num" id="c_unit_gra">—</td><td><input id="sz_gra" type="number" value="40" class="recalc-sz"></td><td class="num" id="u_sz_gra">—</td><td class="num" id="un_sz_gra">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:10px;"><i>(Creches/Infantil e EPT têm parâmetros e capacidades próprios definidos em "Ajustar Premissas")</i></div>
+        </div>
+      </div>
+
+      <!-- BLOCO 4 -->
+      <div class="block">
+        <div class="block-hd"><div class="num-badge">4</div>Padrão de adequação do estoque existente</div>
+        <div class="block-body">
+          <div class="info">Qual padrão aplicar às escolas existentes? O custo unitário varia com o pacote selecionado.</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Estratégia Aplicada</th><th class="num"><span class="tt" data-tt="Padrão de menor custo. Inclui itens mínimos: banheiro, cozinha, refeitório e adequações básicas.">Essencial %</span></th><th class="num"><span class="tt" data-tt="Inclui o essencial e amplia a cobertura de itens estruturantes.">Mínimo %</span></th><th class="num"><span class="tt" data-tt="Inclui itens adicionais de qualidade pedagógica, convivência e suporte.">Desejável %</span></th><th class="num"><span class="tt" data-tt="O pacote mais completo: maior cobertura de laboratórios, biblioteca, quadra, multiuso.">Ideal %</span></th></tr></thead>
+              <tbody>
+                <tr><td>Conversões s/ obra</td><td><input id="pad_conv_ess" type="number" value="40" class="recalc-pad"></td><td><input id="pad_conv_min" type="number" value="40" class="recalc-pad"></td><td><input id="pad_conv_des" type="number" value="15" class="recalc-pad"></td><td><input id="pad_conv_ide" type="number" value="5" class="recalc-pad"></td></tr>
+                <tr><td>Reformas / Adequações</td><td><input id="pad_ref_ess" type="number" value="20" class="recalc-pad"></td><td><input id="pad_ref_min" type="number" value="50" class="recalc-pad"></td><td><input id="pad_ref_des" type="number" value="20" class="recalc-pad"></td><td><input id="pad_ref_ide" type="number" value="10" class="recalc-pad"></td></tr>
+                <tr><td>Ampliações</td><td><input id="pad_amp_ess" type="number" value="10" class="recalc-pad"></td><td><input id="pad_amp_min" type="number" value="40" class="recalc-pad"></td><td><input id="pad_amp_des" type="number" value="30" class="recalc-pad"></td><td><input id="pad_amp_ide" type="number" value="20" class="recalc-pad"></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- FATOR REGIONAL -->
+      <div class="block" id="blockReg">
+        <div class="block-hd"><span class="tt" data-tt="Custos adicionais de construção e logística em territórios remotos, rurais, amazônicos ou de difícil acesso. Incide apenas na parcela definida.">Fator regional e territórios de custo elevado (Opcional)</span></div>
+        <div class="block-body">
+          <div class="controls4">
+            <div><label>Habilitar fator</label><select id="reg_on"><option value="0" selected>Não</option><option value="1">Sim</option></select></div>
+            <div><label>Fator Aplicado</label><input id="reg_fator" type="number" step="0.05" value="1.20"></div>
+          </div>
+          <div id="reg_options" style="display:none; margin-top:12px;">
+            <hr>
+            <div class="controls3">
+              <div><label>Aplicar a Escolas Novas</label><select id="reg_novas_on"><option value="1">Sim</option><option value="0">Não</option></select></div>
+              <div style="grid-column: span 2;"><label>% das Escolas Novas afetadas</label><input id="reg_novas_pct" type="number" value="30"></div>
+              
+              <div><label>Aplicar a Reformas</label><select id="reg_ref_on"><option value="1">Sim</option><option value="0">Não</option></select></div>
+              <div style="grid-column: span 2;"><label>% das Reformas afetadas</label><input id="reg_ref_pct" type="number" value="20"></div>
+
+              <div><label>Aplicar a Ampliações</label><select id="reg_amp_on"><option value="0">Sim</option><option value="0" selected>Não</option></select></div>
+              <div style="grid-column: span 2;"><label>% das Ampliações afetadas</label><input id="reg_amp_pct" type="number" value="0"></div>
+            </div>
+            <div class="result amber" style="margin-top:14px;">
+              <div class="k">Visão Auxiliar <span class="tt" data-tt="Estimativa territorial para Norte/Amazônia ou outras áreas remotas">Norte / Amazônia</span></div>
+              <div class="rr"><span>Escolas Novas afetadas:</span><span id="reg_un_novas">0</span></div>
+              <div class="rr"><span>Reformas afetadas:</span><span id="reg_un_ref">0</span></div>
+              <div class="rr"><span>Matrículas afetadas:</span><span id="reg_mat">0</span></div>
+              <div class="rr"><span>Custo Adicional Regional:</span><span id="reg_cost_add">R$ 0</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BLOCO 5 - RESULTADO -->
+    <aside class="sticky">
+      <div class="card">
+        <div class="card-hd"><div class="num-badge">5</div>Resultado Executivo</div>
+        <div class="card-body">
+          <div class="result navy">
+            <div class="k">PNE 2036 - Capital Total (Obras)</div>
+            <div class="v" id="rTotCap36">R$ —</div>
+            <div class="rows">
+              <div class="rr"><span>Lacuna (mi mat.):</span><span id="r_res_lac">0</span></div>
+              <div class="rr"><span>Novas UDs (FNDE + EI + EPT):</span><span id="r_res_novas">0</span></div>
+              <div class="rr"><span>Reformas/Adeq/Amp UDs:</span><span id="r_res_ref">0</span></div>
+            </div>
+          </div>
+          <div class="result teal">
+            <div class="k">Custeio Operacional Anual (na Meta 2036)</div>
+            <div class="v" id="rTotOp36">R$ —</div>
+            <div class="s">Folha, Apoio e Insumos</div>
+          </div>
+          <div class="result green">
+            <div class="k">Gap de Financiamento Operacional</div>
+            <div class="v" id="rGapOp">R$ —</div>
+            <div class="s">Diferença Custeio - Receitas (Fundeb/PNAE)</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn green" id="btnExport">Exportar Excel</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ABA FINANCIAMENTO -->
+<section class="page" id="fin">
+  <div class="info">Simulação de cobertura de receitas operacionais contra os custos de funcionamento. Valores exibidos em R$ bilhões.</div>
+  <div class="grid">
+    <div>
+      <div class="block">
+        <div class="block-hd">Premissas e Fontes Operacionais</div>
+        <div class="block-body">
+          <div class="controls3">
+            <div><label>VAAF-MIN 2025, R$/aluno/ano</label><input id="vaaf" type="number" value="5699" step="1"></div>
+            <div><label>Fator parcial base</label><input id="fatorParcial" type="number" value="1.00" step="0.05"></div>
+            <div><label>Fundeb total estimado, R$ bi</label><input id="fundebTotal" type="number" value="280" step="1"></div>
+            <div><label>Creche integral</label><input id="fp_creche" type="number" value="1.55" step="0.05"></div>
+            <div><label>Pré-escola integral</label><input id="fp_pre" type="number" value="1.30" step="0.05"></div>
+            <div><label>EF/EM integral</label><input id="fp_efem" type="number" value="1.30" step="0.05"></div>
+            <div><label><span class="tt" data-tt="Valor per capita repassado pelo PNAE">PNAE adicional</span> (R$/aluno/dia)</label><input id="pnaeExtra" type="number" value="0.64" step="0.01"></div>
+            <div><label><span class="tt" data-tt="Valor per capita do PNATE para alunos rurais">PNATE</span> (R$/aluno rural/ano)</label><input id="pnate" type="number" value="1200" step="50"></div>
+            <div><label>% rural na lacuna</label><input id="pnateRuralPct" type="number" value="30" min="0" max="100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="sticky">
+      <div class="result teal"><div class="k">Fontes Conhecidas (Anual)</div><div class="v" id="fundSources">R$ —</div><div class="s">Fundeb + PNAE + PNATE</div></div>
+      <div class="result navy"><div class="k">Custo Operacional (Anual)</div><div class="v" id="fundCost">R$ —</div><div class="s">Cálculo Simulação</div></div>
+      <div class="result green"><div class="k">Gap Operacional</div><div class="v" id="fundGap">R$ —</div><div class="s" id="fundGapSub">Deficit na Meta</div></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ABA COMPARAR -->
+<section class="page" id="cmp">
+  <div class="info">Salve dois cenários para comparar métricas chave de capital e custeio.</div>
+  <div class="btn-row"><button class="btn secondary" id="btnSaveA2">Salvar cenário atual como A</button><button class="btn secondary" id="btnSaveB2">Salvar cenário atual como B</button><button class="btn ghost" id="btnClear">Limpar</button></div>
+  <div class="table-wrap" style="margin-top:14px">
+    <table>
+      <thead><tr><th>Métrica</th><th class="num">Cenário A</th><th class="num">Cenário B</th><th class="num">Diferença (B - A)</th></tr></thead>
+      <tbody id="cmpRows">
+        <tr><td colspan="4" class="num" style="text-align:center;">Nenhum cenário salvo</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ABA PREMISSAS -->
+<section class="page" id="prem">
+  <div class="subnav">
+    <button class="subtab active" data-sub="pInfra">Infra e FNDE</button>
+    <button class="subtab" data-sub="pCusteio">Custeio Parametrizado</button>
+  </div>
+
+  <div class="subpage active" id="pInfra">
+    <div class="block"><div class="block-hd">Custos Base FNDE/PAR e Parametrizados (Unidade Primária)</div>
+    <div class="block-body">
+      <div class="controls3">
+        <div><label>Escola Pequena (FNDE 2s) R$</label><input id="c_peq" type="number" value="698949"></div>
+        <div><label>Escola Média (FNDE 5s) R$</label><input id="c_med" type="number" value="8363708"></div>
+        <div><label>Escola Grande (FNDE 13s) R$</label><input id="c_gra" type="number" value="11696199"></div>
+        
+        <div><label>Creche/Infantil (Tipo 1) R$</label><input id="c_ei" type="number" value="6205011"></div>
+        <div><label>Capacidade Creche (Alunos)</label><input id="cap_ei" type="number" value="188"></div>
+        <div><label>Custo Base EPT (Profissional) R$</label><input id="c_ept" type="number" value="12500000"></div>
+        
+        <div><label>Capacidade EPT (Alunos)</label><input id="cap_ept" type="number" value="500"></div>
+        <div><label>Adicional Tecnológico EPT (%)</label><input id="ept_add" type="number" value="15"></div>
+        <div><label>Alunos por Esc. Existente Conv.</label><input id="cap_exist" type="number" value="250"></div>
+      </div>
+      <div class="info" style="margin-top:14px;">Os padrões FNDE aqui listados são as referências de cálculo nacional médio para 2025. Podem ser editados para refletir a UF. Ensino Médio utiliza as mesmas estruturas físicas do Fundamental na simulação padrão.</div>
+    </div></div>
+    
+    <div class="block"><div class="block-hd">Matriz de Custos de Adequação do Estoque (R$ Mil)</div>
+    <div class="block-body">
+      <div class="controls4">
+        <div><label>Custo Padrão Essencial (K)</label><input id="c_ess" type="number" value="350"></div>
+        <div><label>Custo Padrão Mínimo (K)</label><input id="c_min" type="number" value="800"></div>
+        <div><label>Custo Padrão Desejável (K)</label><input id="c_des" type="number" value="1200"></div>
+        <div><label>Custo Padrão Ideal (K)</label><input id="c_ide" type="number" value="2100"></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="subpage" id="pCusteio">
+    <div class="block"><div class="block-hd">Custeio Operacional Recorrente</div><div class="block-body">
+      <div class="controls3">
+        <div><label>Salário docente mensal 2036</label><input id="sal36" type="number" value="9000"></div>
+        <div><label>Alunos por docente</label><input id="ratioTeacher" type="number" value="22"></div>
+        <div><label>Pessoal de apoio % s/ folha</label><input id="supportPct" type="number" value="25"></div>
+        <div><label>Refeições por dia</label><input id="meals" type="number" value="2"></div>
+        <div><label>Custo por refeição R$</label><input id="mealCost" type="number" value="7"></div>
+        <div><label>Dias letivos</label><input id="schoolDays" type="number" value="200"></div>
+        <div><label>Outros custos aluno/ano R$</label><input id="otherStudent" type="number" value="700"></div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ABA AUDITORIA -->
+<section class="page" id="met">
+  <div class="block"><div class="block-hd">Rastreabilidade e Impacto</div><div class="block-body">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Parâmetro</th><th>Valor Referência</th><th>Fonte/Recorte</th><th>Observação Metodológica</th></tr></thead>
+        <tbody>
+          <tr><td>Base Matrículas</td><td>Censo Escolar 2025</td><td>INEP</td><td>Dado observado e projetado com curva demográfica.</td></tr>
+          <tr><td>Tipologias FNDE/PAR</td><td>Custos 2025 (SINAPI)</td><td>FNDE</td><td>Agrupados em Pequena, Média e Grande para simplificação. EM espelha EF.</td></tr>
+          <tr><td>Fator Regional</td><td>Adicional Variável</td><td>Premissa Geográfica</td><td>Composição aditiva que afeta apenas as unidades e percentuais selecionados no Bloco Opcional.</td></tr>
+          <tr><td>Custos de Adequação</td><td>Matriz K</td><td>Equipe Técnica</td><td>Ponderação com base nos padrões Essencial, Mínimo, Desejável e Ideal.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div></div>
+</section>
+
+<script>
+'use strict';
+// Data Arrays (Summarized to save tokens but preserve requested functionality)
+const CENSO_UF = [
+  {uf:"AC",nome:"Acre",mat:219432},{uf:"AL",nome:"Alagoas",mat:737638},{uf:"AM",nome:"Amazonas",mat:1003241},{uf:"AP",nome:"Amapá",mat:213318},
+  {uf:"BA",nome:"Bahia",mat:2844076},{uf:"CE",nome:"Ceará",mat:1878954},{uf:"DF",nome:"Dist. Federal",mat:480162},{uf:"ES",nome:"Esp. Santo",mat:738698},
+  {uf:"GO",nome:"Goiás",mat:1141677},{uf:"MA",nome:"Maranhão",mat:1636849},{uf:"MG",nome:"Minas Gerais",mat:3698246},{uf:"MS",nome:"Mato G. Sul",mat:499263},
+  {uf:"MT",nome:"Mato Grosso",mat:672804},{uf:"PA",nome:"Pará",mat:1780932},{uf:"PB",nome:"Paraíba",mat:726614},{uf:"PE",nome:"Pernambuco",mat:1779614},
+  {uf:"PI",nome:"Piauí",mat:612895},{uf:"PR",nome:"Paraná",mat:1799574},{uf:"RJ",nome:"Rio de Janeiro",mat:2426488},{uf:"RN",nome:"Rio Gr. Norte",mat:621289},
+  {uf:"RO",nome:"Rondônia",mat:344290},{uf:"RR",nome:"Roraima",mat:131474},{uf:"RS",nome:"Rio Gr. Sul",mat:1569148},{uf:"SC",nome:"Santa Catarina",mat:1145416},
+  {uf:"SE",nome:"Sergipe",mat:448618},{uf:"SP",nome:"São Paulo",mat:6521847},{uf:"TO",nome:"Tocantins",mat:317453},{uf:"BR",nome:"Brasil",mat:36793014}
+];
+
+let savedA = null, savedB = null;
+
+const G = id => document.getElementById(id);
+const nv = (id, fb=0) => { const el = G(id); return el && Number.isFinite(parseFloat(el.value)) ? parseFloat(el.value) : fb; };
+const sv = (id, fb='') => G(id) ? G(id).value : fb;
+const st = (id, txt) => { const el=G(id); if(el) el.textContent = txt; };
+
+const fmtBiFromK = vK => 'R$ ' + ((vK||0) / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' bi';
+const fmtBi = v => 'R$ ' + ((v||0) / 1e9).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' bi';
+const fmtMi = v => (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtInt = v => Math.round(v||0).toLocaleString('pt-BR');
+const fmtPct = v => (v||0).toLocaleString('pt-BR',{maximumFractionDigits:1}) + '%';
+
+function init() {
+  G('ufSelect').innerHTML = CENSO_UF.map(u=>`<option value="${u.uf}" ${u.uf==='BR'?'selected':''}>${u.uf} - ${u.nome}</option>`).join('');
+  setupNav();
+  setupListeners();
+  update();
+}
+
+function setupNav(){
+  document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    G(btn.dataset.tab).classList.add('active');
+    update();
+  }));
+  document.querySelectorAll('.subtab').forEach(btn => btn.addEventListener('click', () => {
+    const parent = btn.closest('.page');
+    parent.querySelectorAll('.subtab').forEach(b=>b.classList.remove('active'));
+    parent.querySelectorAll('.subpage').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    G(btn.dataset.sub).classList.add('active');
+  }));
+}
+
+function setupListeners(){
+  document.body.addEventListener('input', e => {
+    if(e.target.matches('input,select')) {
+      if(e.target.id==='t36') st('t36Lbl', e.target.value+'%');
+      if(e.target.id==='t50') st('t50Lbl', e.target.value+'%');
+      if(e.target.id==='d36') st('d36Lbl', e.target.value+'%');
+      if(e.target.id==='ufSelect') applyUfSelection();
+      if(e.target.id==='reg_on') toggleRegional();
+      update();
+    }
+  });
+  G('btnNormDiv').addEventListener('click', () => normalizeGroup(['div_ei','div_ef','div_em','div_ept']));
+  G('btnNormStrat').addEventListener('click', () => {
+    normalizeGroup(['strat_conv','strat_ref','strat_amp','strat_new']);
+    normalizeGroup(['sz_peq','sz_med','sz_gra']);
+    normalizeGroup(['pad_conv_ess','pad_conv_min','pad_conv_des','pad_conv_ide']);
+    normalizeGroup(['pad_ref_ess','pad_ref_min','pad_ref_des','pad_ref_ide']);
+    normalizeGroup(['pad_amp_ess','pad_amp_min','pad_amp_des','pad_amp_ide']);
+  });
+  G('btnExport').addEventListener('click', exportToExcel);
+  G('btnSaveA2').addEventListener('click', () => saveScenario('A'));
+  G('btnSaveB2').addEventListener('click', () => saveScenario('B'));
+  G('btnClear').addEventListener('click', () => { savedA=null; savedB=null; renderCompare(); });
+}
+
+function toggleRegional() {
+  const on = nv('reg_on') === 1;
+  G('reg_options').style.display = on ? 'block' : 'none';
+  G('blockReg').classList.toggle('regional-on', on);
+}
+
+function applyUfSelection(){
+  const uf = sv('ufSelect','BR');
+  const row = CENSO_UF.find(u=>u.uf===uf);
+  if(row) {
+    G('basePub').value = (row.mat/1e6).toFixed(3);
+    G('baseEti').value = ((row.mat/1e6)*(9.5/36.793014)).toFixed(3);
+  }
+}
+
+function normalizeGroup(ids) {
+  const vals = ids.map(id => nv(id));
+  const sum = vals.reduce((a,b)=>a+b, 0);
+  if(sum > 0 && sum !== 100) {
+    ids.forEach((id, i) => { G(id).value = ((vals[i]/sum)*100).toFixed(1); });
+    update();
+  }
+}
+
+function getNormalizedVals(ids) {
+  const vals = ids.map(id => nv(id));
+  const sum = vals.reduce((a,b)=>a+b, 0);
+  return sum > 0 ? vals.map(v => v/sum) : vals.map(()=>0);
+}
+
+function calcPnaeTot(mat, val) {
+  const days = nv('schoolDays', 200);
+  return (mat * 1e6) * val * days; // R$
+}
+
+function calcPnateTot(mat, val, pctRural) {
+  return (mat * 1e6) * (pctRural/100) * val; // R$
+}
+
+function update() {
+  const calc = calcAll();
+  render(calc);
+}
+
+function calcAll() {
+  // 1. GAP CALC
+  const bPub = nv('basePub');
+  const bEti = nv('baseEti');
+  const drop = nv('d36') / 100;
+  const meta36 = nv('t36') / 100;
+  
+  const pop2036 = bPub * (1 - drop);
+  const matNec36 = pop2036 * meta36;
+  const lacuna = Math.max(0, matNec36 - bEti);
+
+  // 2. DIVISION
+  const divs = getNormalizedVals(['div_ei','div_ef','div_em','div_ept']);
+  const lacEI = lacuna * divs[0];
+  const lacEF = lacuna * divs[1];
+  const lacEM = lacuna * divs[2];
+  const lacEPT = lacuna * divs[3];
+  
+  // 3. STRATEGY
+  const strats = getNormalizedVals(['strat_conv','strat_ref','strat_amp','strat_new']);
+  
+  // 3A. SIZES FOR NEW SCHOOLS (EF+EM)
+  const sizes = getNormalizedVals(['sz_peq','sz_med','sz_gra']);
+  const lacEFEM_new = (lacEF + lacEM) * strats[3]; // Escolas Novas portion of EF+EM
+  
+  const cap_peq = nv('cap_peq', 60); const c_peq = nv('c_peq');
+  const cap_med = nv('cap_med', 175); const c_med = nv('c_med');
+  const cap_gra = nv('cap_gra', 455); const c_gra = nv('c_gra');
+  const cap_ei = nv('cap_ei', 188); const c_ei = nv('c_ei');
+  const cap_ept = nv('cap_ept', 500); 
+  const c_ept = nv('c_ept') * (1 + nv('ept_add')/100);
+
+  const un_peq = (lacEFEM_new * 1e6 * sizes[0]) / cap_peq || 0;
+  const un_med = (lacEFEM_new * 1e6 * sizes[1]) / cap_med || 0;
+  const un_gra = (lacEFEM_new * 1e6 * sizes[2]) / cap_gra || 0;
+  const un_ei_new = (lacEI * strats[3] * 1e6) / cap_ei || 0;
+  const un_ept_new = (lacEPT * strats[3] * 1e6) / cap_ept || 0;
+
+  const cost_new = (un_peq*c_peq + un_med*c_med + un_gra*c_gra + un_ei_new*c_ei + un_ept_new*c_ept);
+
+  // 4. ADEQUACY PATTERNS
+  const pConv = getNormalizedVals(['pad_conv_ess','pad_conv_min','pad_conv_des','pad_conv_ide']);
+  const pRef = getNormalizedVals(['pad_ref_ess','pad_ref_min','pad_ref_des','pad_ref_ide']);
+  const pAmp = getNormalizedVals(['pad_amp_ess','pad_amp_min','pad_amp_des','pad_amp_ide']);
+  
+  const c_ess = nv('c_ess')*1000; const c_min = nv('c_min')*1000;
+  const c_des = nv('c_des')*1000; const c_ide = nv('c_ide')*1000;
+
+  const cost_unit_conv = pConv[0]*c_ess + pConv[1]*c_min + pConv[2]*c_des + pConv[3]*c_ide;
+  const cost_unit_ref = pRef[0]*c_ess + pRef[1]*c_min + pRef[2]*c_des + pRef[3]*c_ide;
+  const cost_unit_amp = pAmp[0]*c_ess + pAmp[1]*c_min + pAmp[2]*c_des + pAmp[3]*c_ide;
+
+  const cap_exist = nv('cap_exist', 250);
+  const un_conv = (lacuna * 1e6 * strats[0]) / cap_exist || 0;
+  const un_ref = (lacuna * 1e6 * strats[1]) / cap_exist || 0;
+  const un_amp = (lacuna * 1e6 * strats[2]) / cap_exist || 0;
+
+  const cost_conv = un_conv * cost_unit_conv;
+  const cost_ref = un_ref * cost_unit_ref;
+  const cost_amp = un_amp * cost_unit_amp;
+
+  // 5. REGIONAL FACTOR
+  const regOn = nv('reg_on') === 1;
+  const f_reg = nv('reg_fator');
+  let reg_cost_add = 0;
+  let reg_un_novas = 0;
+  let reg_un_ref = 0;
+  let reg_mat = 0;
+
+  if (regOn) {
+    if (nv('reg_novas_on')) {
+      const pct = nv('reg_novas_pct')/100;
+      reg_un_novas = (un_peq+un_med+un_gra+un_ei_new+un_ept_new) * pct;
+      reg_cost_add += cost_new * pct * (f_reg - 1);
+      reg_mat += (lacuna * 1e6 * strats[3]) * pct;
+    }
+    if (nv('reg_ref_on')) {
+      const pct = nv('reg_ref_pct')/100;
+      reg_un_ref = un_ref * pct;
+      reg_cost_add += cost_ref * pct * (f_reg - 1);
+      reg_mat += (lacuna * 1e6 * strats[1]) * pct;
+    }
+    if (nv('reg_amp_on')) {
+      const pct = nv('reg_amp_pct')/100;
+      reg_cost_add += cost_amp * pct * (f_reg - 1);
+      reg_mat += (lacuna * 1e6 * strats[2]) * pct;
+    }
+  }
+
+  const capitalTotal = cost_new + cost_conv + cost_ref + cost_amp + reg_cost_add;
+
+  // 6. OPERATIONAL CALC
+  const salDoc = nv('sal36', 9000);
+  const ratio = nv('ratioTeacher', 22);
+  const supPct = nv('supportPct', 25)/100;
+  const days = nv('schoolDays', 200);
+  const mealC = nv('mealCost', 7);
+  const meals = nv('meals', 2);
+  const oStd = nv('otherStudent', 700);
+  
+  const docentes = (matNec36 * 1e6) / ratio;
+  const costFolhaDoc = docentes * salDoc * 13.3; // anual
+  const costFolhaApoio = costFolhaDoc * supPct;
+  const costAlim = (matNec36 * 1e6) * meals * mealC * days;
+  const costOther = (matNec36 * 1e6) * oStd;
+  
+  const opTot36 = costFolhaDoc + costFolhaApoio + costAlim + costOther;
+
+  // 7. FINANCING SOURCES
+  const vaaf = nv('vaaf', 5699);
+  const f_base = nv('fatorParcial', 1);
+  const fp_cre = nv('fp_creche'); const fp_pre = nv('fp_pre');
+  const fp_efem = nv('fp_efem');
+  
+  // Weighted fundeb
+  const matCre = (bPub*0.05 + lacEI*0.4) * 1e6; // Est. simplification
+  const matPre = (bPub*0.10 + lacEI*0.6) * 1e6;
+  const matEFEM = (bPub*0.85 + lacEF + lacEM + lacEPT) * 1e6;
+  
+  const fundeb = (matCre * vaaf * f_base * fp_cre) + 
+                 (matPre * vaaf * f_base * fp_pre) + 
+                 (matEFEM * vaaf * f_base * fp_efem);
+                 
+  const pnaeTot_val = calcPnaeTot(matNec36, nv('pnaeExtra'));
+  const pnateTot_val = calcPnateTot(matNec36, nv('pnate'), nv('pnateRuralPct'));
+  
+  const totalSources = fundeb + pnaeTot_val + pnateTot_val;
+  const gapOp = opTot36 - totalSources;
+
+  return {
+    bPub, matNec36, lacuna,
+    divs, lacEI, lacEF, lacEM, lacEPT,
+    strats, cost_new, cost_conv, cost_ref, cost_amp, reg_cost_add,
+    un_peq, un_med, un_gra, un_ei_new, un_ept_new, un_conv, un_ref, un_amp,
+    capitalTotal, opTot36, totalSources, gapOp,
+    regOn, reg_un_novas, reg_un_ref, reg_mat
+  };
+}
+
+function render(c) {
+  st('lblLacuna', fmtMi(c.lacuna) + ' mi');
+  st('lblNecessarias', fmtMi(c.matNec36));
+  
+  // Divs
+  st('u_div_ei', fmtPct(c.divs[0]*100)); st('m_div_ei', fmtMi(c.lacEI)+' mi');
+  st('u_div_ef', fmtPct(c.divs[1]*100)); st('m_div_ef', fmtMi(c.lacEF)+' mi');
+  st('u_div_em', fmtPct(c.divs[2]*100)); st('m_div_em', fmtMi(c.lacEM)+' mi');
+  st('u_div_ept', fmtPct(c.divs[3]*100)); st('m_div_ept', fmtMi(c.lacEPT)+' mi');
+
+  // Strats
+  st('u_strat_conv', fmtPct(c.strats[0]*100)); st('m_strat_conv', fmtMi(c.lacuna*c.strats[0])+' mi');
+  st('un_strat_conv', fmtInt(c.un_conv)); st('c_strat_conv', fmtBiFromK(c.cost_conv/1000));
+  
+  st('u_strat_ref', fmtPct(c.strats[1]*100)); st('m_strat_ref', fmtMi(c.lacuna*c.strats[1])+' mi');
+  st('un_strat_ref', fmtInt(c.un_ref)); st('c_strat_ref', fmtBiFromK(c.cost_ref/1000));
+  
+  st('u_strat_amp', fmtPct(c.strats[2]*100)); st('m_strat_amp', fmtMi(c.lacuna*c.strats[2])+' mi');
+  st('un_strat_amp', fmtInt(c.un_amp)); st('c_strat_amp', fmtBiFromK(c.cost_amp/1000));
+  
+  st('u_strat_new', fmtPct(c.strats[3]*100)); st('m_strat_new', fmtMi(c.lacuna*c.strats[3])+' mi');
+  st('un_strat_new', fmtInt(c.un_peq+c.un_med+c.un_gra+c.un_ei_new+c.un_ept_new)); st('c_strat_new', fmtBiFromK(c.cost_new/1000));
+
+  // Sizes
+  st('c_unit_peq', 'R$ ' + fmtInt(nv('c_peq')));
+  const sZs = getNormalizedVals(['sz_peq','sz_med','sz_gra']);
+  st('u_sz_peq', fmtPct(sZs[0]*100)); st('un_sz_peq', fmtInt(c.un_peq));
+  st('c_unit_med', 'R$ ' + fmtInt(nv('c_med')));
+  st('u_sz_med', fmtPct(sZs[1]*100)); st('un_sz_med', fmtInt(c.un_med));
+  st('c_unit_gra', 'R$ ' + fmtInt(nv('c_gra')));
+  st('u_sz_gra', fmtPct(sZs[2]*100)); st('un_sz_gra', fmtInt(c.un_gra));
+
+  // Regional
+  st('reg_un_novas', fmtInt(c.reg_un_novas));
+  st('reg_un_ref', fmtInt(c.reg_un_ref));
+  st('reg_mat', fmtInt(c.reg_mat));
+  st('reg_cost_add', fmtBiFromK(c.reg_cost_add/1000));
+
+  // Results
+  const totalCapex = c.capitalTotal;
+  const totAcum = totalCapex + (c.opTot36 * 10 * 0.5); // simplificado 10 anos transição
+  const tot50 = totalCapex*1.5 + (c.opTot36 * 24 * 0.7);
+
+  st('rTotCap36', fmtBi(totalCapex));
+  st('r_res_lac', fmtMi(c.lacuna));
+  st('r_res_novas', fmtInt(c.un_peq+c.un_med+c.un_gra+c.un_ei_new+c.un_ept_new));
+  st('r_res_ref', fmtInt(c.un_conv + c.un_ref + c.un_amp));
+  
+  st('rTotOp36', fmtBi(c.opTot36));
+  st('rGapOp', fmtBi(c.gapOp));
+  
+  st('kpiCap36', fmtBi(totalCapex));
+  st('kpiOp36', fmtBi(c.opTot36));
+  st('kpiTot36', fmtBi(totAcum));
+  st('kpiTot50', fmtBi(tot50));
+
+  // Financing
+  st('fundSources', fmtBi(c.totalSources));
+  st('fundCost', fmtBi(c.opTot36));
+  st('fundGap', fmtBi(c.gapOp));
+
+  renderCompare(c);
+}
+
+function saveScenario(key) {
+  const c = calcAll();
+  if(key==='A') savedA = c;
+  if(key==='B') savedB = c;
+  renderCompare(c);
+  alert('Cenário ' + key + ' salvo.');
+}
+
+function renderCompare(current = null) {
+  if(!current) current = calcAll();
+  const tb = G('cmpRows');
+  
+  const fV = v => v ? fmtBi(v) : '—';
+  const rV = (lbl, k) => {
+    const vCur = current[k];
+    const vA = savedA ? savedA[k] : null;
+    const vB = savedB ? savedB[k] : null;
+    const diff = (vB && vA) ? (vB - vA) : null;
+    return `<tr><td>${lbl}</td><td class="num">${fV(vCur)}</td><td class="num">${fV(vA)}</td><td class="num">${fV(vB)}</td><td class="num"><b>${fV(diff)}</b></td></tr>`;
+  };
+
+  tb.innerHTML = 
+    rV('Capital Total (Obras)', 'capitalTotal') +
+    rV('Custeio Operacional Anual', 'opTot36') +
+    rV('Gap de Financiamento', 'gapOp');
+}
+
+function exportToExcel() {
+  const c = calcAll();
+  const wb = XLSX.utils.book_new();
+  const ws_data = [
+    ["Parâmetro", "Valor", "Unidade"],
+    ["Lacuna a criar", c.lacuna, "Milhões de Matrículas"],
+    ["Capital Total Estimado", c.capitalTotal, "R$"],
+    ["Custeio Anual na Meta", c.opTot36, "R$"],
+    ["Gap de Financiamento Anual", c.gapOp, "R$"],
+    ["Escolas Novas", Math.round(c.un_peq+c.un_med+c.un_gra+c.un_ei_new+c.un_ept_new), "Unidades"],
+    ["Reformas e Adequações", Math.round(c.un_conv + c.un_ref + c.un_amp), "Unidades"],
+    ["Adicional Custo Regional", c.reg_cost_add, "R$"]
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb, ws, "Simulacao ETI");
+  XLSX.writeFile(wb, "Simulacao_ETI_v6.xlsx");
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
